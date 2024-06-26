@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class Game(scope: CoroutineScope, rows: Int, cols: Int, speed: Int) {
-    private var running = false
+class Game(scope: CoroutineScope, rows: Int, cols: Int, var speed: Int) {
+    var running = false
+        private set
 
     private val mutableState = MutableStateFlow(State(rows, cols))
     val state: Flow<State> = mutableState
@@ -15,28 +16,25 @@ class Game(scope: CoroutineScope, rows: Int, cols: Int, speed: Int) {
     init {
         scope.launch {
             newGame()
-            start(speed)
+            start()
         }
     }
 
     fun newGame(): Game {
-        val board = mutableState.value.board
-        val newBoard = board.map { row ->
-            row.map { cell ->
-                Cell(cell.row, cell.col, (0..10).random() == 0)
-            }
-        }
-
         mutableState.update {
             it.copy(
-                board = newBoard
+                board = it.board.map { cells ->
+                    cells.map {
+                        Cell((0..1).random() == 0)
+                    }
+                }
             )
         }
 
         return this
     }
 
-    private suspend fun start(speed: Int): Game = coroutineScope {
+    suspend fun start(): Game = coroutineScope {
         running = true
         while (running) {
             tick()
@@ -49,29 +47,23 @@ class Game(scope: CoroutineScope, rows: Int, cols: Int, speed: Int) {
         running = false
     }
 
-    private fun tick() {
-        val board = mutableState.value.board
-        val newBoard = board.map { row ->
-            row.map { cell ->
-                cell.tick(this)
-            }
-        }
-
+    fun tick() {
         mutableState.update {
             it.copy(
-                board = newBoard
+                board = it.board.mapIndexed { row, cells ->
+                    cells.mapIndexed { col, cell ->
+                        cell.tick(this, row, col)
+                    }
+                }
             )
         }
-
-        for (row in newBoard) {
-            for (cell in row) {
-                print(cell)
-            }
-            println()
-        }
-        println()
     }
+
     fun cellAt(row: Int, col: Int): Cell? {
         return mutableState.value.board.getOrNull(row)?.getOrNull(col)
+    }
+
+    operator fun get(row: Int, col: Int): Cell? {
+        return cellAt(row, col)
     }
 }

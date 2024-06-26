@@ -1,28 +1,30 @@
-data class Cell(
-    val row: Int,
-    val col: Int,
-    val isAlive: Boolean = false
-) {
-    private val neighbours = (1..3).flatMap { row ->
-        (1..3).map { col ->
-            if (row == 2 && col == 2) null
-            else Pair(row + this.row - 2, col + this.col - 2)
-        }
-    }.filterNotNull()
+@JvmInline
+value class Cell(val isAlive: Boolean = false) {
+    private val neighbours: Array<Pair<Int, Int>>
+        get() = arrayOf(
+            Pair(-1, -1),
+            Pair(-1, 0),
+            Pair(-1, 1),
+            Pair(0, -1),
+            Pair(0, 1),
+            Pair(1, -1),
+            Pair(1, 0),
+            Pair(1, 1)
+        )
 
-    fun tick(game: Game): Cell {
-        val aliveNeighbours = neighbours.count {
-            val (row, col) = it
+    fun tick(game: Game, row: Int, col: Int): Cell {
+        val neighbours = neighbours.map { (rowOffset, colOffset) ->
+            Pair(row + rowOffset, col + colOffset)
+        }
+
+        val aliveNeighbours = neighbours.count { (row, col) ->
             game.cellAt(row, col)?.isAlive == true
         }
-        return when (aliveNeighbours) {
-            !in 2..3 -> Cell(row, col, false)
-            3 ->  Cell(row, col, true)
-            else -> return this
-        }
-    }
 
-    override fun toString(): String {
-        return if (isAlive) "X" else "-"
+        return when (aliveNeighbours) {
+            !in 2..3 -> Cell(false)
+            3 ->  Cell(true)
+            else -> this
+        }
     }
 }
