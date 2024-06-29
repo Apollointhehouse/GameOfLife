@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.zIndex
+import game.Game
 import kotlinx.coroutines.launch
 import kotlin.math.sign
 
@@ -97,7 +98,6 @@ fun App() {
                     )
                 }
 
-
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
@@ -106,6 +106,7 @@ fun App() {
                 ) {
                     val (width, height) = size
                     val (rows, cols) = state.value ?: return@Canvas
+                    val board = state.value?.board ?: return@Canvas
 
                     drawRect(
                         Color.DarkGray,
@@ -114,9 +115,11 @@ fun App() {
                         style = Stroke(0.3f)
                     )
 
-                    for (x in 0 until cols) {
-                        for (y in 0 until rows) {
-                            if (game[x, y]?.isAlive != true) continue
+                    for (cells in board) {
+                        for (cell in cells) {
+                            if (!cell.isAlive) continue
+                            val (x, y) = cell.pos
+
                             drawRect(
                                 Color.Black,
                                 Offset((width / 2 - (cols * scale) / 2 + x * scale), (height / 2 - (rows * scale) / 2 + y * scale)),
